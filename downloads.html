@@ -3,146 +3,141 @@
 <head>
   <meta charset="UTF-8" />
   <title>Lista de PDFs</title>
-   <!-- Link para favicon -->
   <link rel="icon" type="image/png" href="rjlogo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* Reset básico */
-    * * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f6f8;
-  color: #333;
-  padding: 20px;
-}
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      padding: 20px;
+    }
 
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
 
-h1 {
-  text-align: center;
-  margin-bottom: 24px;
-  color: #2c3e50;
-}
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #2c3e50;
+    }
 
-.filters {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 30px;
-}
+    .filters {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 200px;
-}
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 200px;
+    }
 
-label {
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: #34495e;
-}
+    label {
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #34495e;
+    }
 
-input[type="date"],
-input[type="text"] {
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #fdfdfd;
-  transition: border-color 0.2s;
-}
+    input[type="date"],
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #fdfdfd;
+      transition: border-color 0.2s;
+    }
 
-input:focus {
-  border-color: #007bff;
-  outline: none;
-}
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
 
-#download-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+    #download-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
 
-.pdf-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 18px;
-  background-color: #ecf0f1;
-  border-radius: 10px;
-  transition: background-color 0.2s ease;
-}
+    .pdf-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      background-color: #ecf0f1;
+      border-radius: 10px;
+      transition: background-color 0.2s ease;
+    }
 
-.pdf-item:hover {
-  background-color: #dfe6e9;
-}
+    .pdf-item:hover {
+      background-color: #dfe6e9;
+    }
 
-.pdf-item a {
-  color: #2d3436;
-  text-decoration: none;
-  font-weight: 500;
-  max-width: 75%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+    .pdf-item a {
+      color: #2d3436;
+      text-decoration: none;
+      font-weight: 500;
+      max-width: 75%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-.pdf-item button {
-  background-color: #3498db;
-  border: none;
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
+    .pdf-item button {
+      background-color: #3498db;
+      border: none;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
 
-.pdf-item button:hover {
-  background-color: #2980b9;
-}
+    .pdf-item button:hover {
+      background-color: #2980b9;
+    }
 
-/* Responsividade para mobile */
-@media (max-width: 600px) {
-  .filters {
-    flex-direction: column;
-    gap: 12px;
-  }
+    @media (max-width: 600px) {
+      .filters {
+        flex-direction: column;
+        gap: 12px;
+      }
 
-  .pdf-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
+      .pdf-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
 
-  .pdf-item a {
-    max-width: 100%;
-    white-space: normal;
-    font-size: 1rem;
-  }
+      .pdf-item a {
+        max-width: 100%;
+        white-space: normal;
+        font-size: 1rem;
+      }
 
-  .pdf-item button {
-    width: 100%;
-    font-size: 1rem;
-  }
-}
-
-  
+      .pdf-item button {
+        width: 100%;
+        font-size: 1rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -195,7 +190,6 @@ input:focus {
 
       dbGlobal = new SQL.Database(bytes);
 
-      // Busca todos os PDFs no banco para filtro client-side
       const res = dbGlobal.exec("SELECT id, nome, data, conteudo FROM pdfs ORDER BY id DESC");
       if (res.length === 0 || res[0].values.length === 0) {
         document.getElementById("download-list").innerHTML = "<p>Nenhum PDF salvo.</p>";
@@ -212,55 +206,56 @@ input:focus {
       renderPDFs();
     }
 
-    function renderPDFs() {
-      const downloadList = document.getElementById("download-list");
-      const filterDate = document.getElementById("filterDate").value; // formato ISO YYYY-MM-DD
-      const filterOs = document.getElementById("filterOs").value.trim().toLowerCase();
+  function convertBRDateToISO(brDateTime) {
+  // Recebe "19/07/2025, 15:43"
+  // Retorna "2025-07-19"
+  const parts = brDateTime.split(",")[0].trim(); // "19/07/2025"
+  const [dia, mes, ano] = parts.split("/");
+  return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+}
 
-      downloadList.innerHTML = "";
+function renderPDFs() {
+  const downloadList = document.getElementById("download-list");
+  const filterDate = document.getElementById("filterDate").value; // "YYYY-MM-DD"
+  const filterOs = document.getElementById("filterOs").value.trim().toLowerCase();
 
-      function extractDateFromName(name) {
-        const regex = /\d{4}-\d{2}-\d{2}/;
-        const match = name.match(regex);
-        return match ? match[0] : null;
-      }
+  downloadList.innerHTML = "";
 
-      const filtered = allPdfs.filter(pdf => {
-        if (filterDate) {
-          const dateInName = extractDateFromName(pdf.nome);
-          if (dateInName !== filterDate) return false;
-        }
-
-        if (filterOs && !pdf.nome.toLowerCase().includes(filterOs)) {
-          return false;
-        }
-
-        return true;
-      });
-
-      if (filtered.length === 0) {
-        downloadList.innerHTML = "<p>Nenhum PDF encontrado.</p>";
-        return;
-      }
-
-      filtered.forEach(({ id, nome, data, conteudo }) => {
-        const container = document.createElement("div");
-        container.className = "pdf-item";
-
-        const link = document.createElement("a");
-        link.href = conteudo;
-        link.download = nome;
-        link.textContent = `#${id} - ${nome} (${data})`;
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "🗑️";
-        deleteBtn.onclick = () => excluirPDF(id);
-
-        container.appendChild(link);
-        container.appendChild(deleteBtn);
-        downloadList.appendChild(container);
-      });
+  const filtered = allPdfs.filter(pdf => {
+    if (filterDate) {
+      const pdfDateISO = convertBRDateToISO(pdf.data);
+      if (pdfDateISO !== filterDate) return false;
     }
+    if (filterOs && !pdf.nome.toLowerCase().includes(filterOs)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    downloadList.innerHTML = "<p>Nenhum PDF encontrado.</p>";
+    return;
+  }
+
+  filtered.forEach(({ id, nome, data, conteudo }) => {
+    const container = document.createElement("div");
+    container.className = "pdf-item";
+
+    const link = document.createElement("a");
+    link.href = conteudo;
+    link.download = nome;
+    link.textContent = `#${id} - ${nome} (${data})`; // já está em BR
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.setAttribute("aria-label", `Excluir PDF ${nome}`);
+    deleteBtn.textContent = "🗑️";
+    deleteBtn.onclick = () => excluirPDF(id);
+
+    container.appendChild(link);
+    container.appendChild(deleteBtn);
+    downloadList.appendChild(container);
+  });
+}
+
 
     function excluirPDF(id) {
       if (!confirm("Tem certeza que deseja excluir este PDF?")) return;

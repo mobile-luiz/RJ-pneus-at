@@ -205,7 +205,6 @@ function addContent(doc, yOffset) {
   doc.setFontSize(8);
   doc.text(`Lançamento em: ${dateString}`, pageWidth - 60, yOffsetItems + 5);
 }
-
 // Gera o PDF, salva no banco e redireciona para downloads.html
 async function generatePDF() {
   const { jsPDF } = window.jspdf;
@@ -218,18 +217,23 @@ async function generatePDF() {
   addContent(doc, 165);
 
   const pdfBase64 = doc.output('datauristring');
+
   const now = new Date();
-  const nomeArquivo = `autorizacao_servico_${now.toISOString().slice(0, 10)}_${currentServiceNumber}.pdf`;
-  const dataFormatada = now.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  //const nomeArquivo = `autorizacao_servico.pdf`; // <-- nome fixo, sem data e número
+  const nomeArquivo = `autorizacao_servico_${currentServiceNumber}.pdf`;
+  const dataFormatada = now.toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
 
   savePdfToDatabase(nomeArquivo, dataFormatada, pdfBase64);
   listarPdfsSalvos();
 
   alert(`PDF salvo como "${nomeArquivo}" e listado na seção de downloads.`);
-
-  // Redireciona para downloads.html após salvar
   window.location.href = 'downloads.html';
 }
+
+
 
 // Adiciona um novo item no formulário
 function addItem() {
