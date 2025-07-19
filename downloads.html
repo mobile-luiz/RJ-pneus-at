@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de PDFs</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      padding: 40px 20px;
+      margin: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background-color: #ffffff;
+      padding: 30px 40px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+    }
+
+    h1 {
+      font-size: 26px;
+      color: #1a73e8;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-top: 10px;
+      color: #555;
+    }
+
+    input[type="date"],
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    .pdf-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #f1f3f4;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .pdf-item a {
+      color: #202124;
+      text-decoration: none;
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pdf-item button {
+      background-color: #e53935;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .pdf-item button:hover {
+      background-color: #c62828;
+    }
+
+    #download-list p {
+      font-style: italic;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PDFs Salvos</h1>
+
+    <label for="filterDate">Filtrar por data:</label>
+    <input type="date" id="filterDate">
+
+    <label for="filterOs">Filtrar por número da OS:</label>
+    <input type="text" id="filterOs" placeholder="Ex: 7147">
+
+    <div id="download-list">Carregando PDFs...</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
+  <script>
+    let dbGlobal;
+    let SQL;
+
+    async function initDatabase() {
+      SQL = await initSqlJs({
+        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}`
+      });
+
+      const savedDb = localStorage.getItem('myDatabase');
+      if (!savedDb) {
+        document.getElementById('download-list').innerHTML = '<p>Nenhum PDF salvo.</p>';
+        return;
+      }
+
+      const binaryString = atob(savedDb);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      dbGlobal = new SQL.Database(bytes);
+      renderPDFs();
+    }
+
+    function renderPDFs() {
+      const downloadList = document.getElementById('download-list');
+      const filterDate = document.getElementById('filterDate').value;
+      const filterOs = document.getElementById('filterOs').value.trim();
+
+      let query = "SELECT id, nome, data, conteudo FROM pdfs";
+      let conditions = [];
+
+      if (filterDate) {
+  conditions.push(`nome LIKE '%${filterDate}%'`);
+}
+
+
+      if (filterOs) {
+        conditions.push(`nome LIKE '%${filterOs}%'`);
+      }
+
+      if (conditions.length > 0) {
+        query += " WHERE " + conditions.join(" AND ");
+      }
+
+      query += " ORDER BY id DESC";
+
+      const result = dbGlobal.exec(query);
+      downloadList.innerHTML = '';
+
+      if (result.length === 0 || result[0].values.length === 0) {
+        downloadList.innerHTML = '<p>Nenhum PDF encontrado.</p>';
+        return;
+      }
+
+      result[0].values.forEach(([id, nome, data, conteudo]) => {
+        const container = document.createElement('div');
+        container.className = 'pdf-item';
+
+        const link = document.createElement('a');
+        link.href = conteudo;
+        link.download = nome;
+        link.textContent = `#${id} - ${nome} (${data})`;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.onclick = () => excluirPDF(id);
+
+        container.appendChild(link);
+        container.appendChild(deleteBtn);
+        downloadList.appendChild(container);
+      });
+    }
+
+    function excluirPDF(id) {
+      if (!confirm("Tem certeza que deseja excluir este PDF?")) return;
+
+      dbGlobal.run(`DELETE FROM pdfs WHERE id = ?`, [id]);
+
+      const data = dbGlobal.export();
+      const base64Data = btoa(String.fromCharCode(...data));
+      localStorage.setItem('myDatabase', base64Data);
+
+      renderPDFs();
+    }
+
+    document.getElementById('filterDate').addEventListener('change', renderPDFs);
+    document.getElementById('filterOs').addEventListener('input', renderPDFs);
+
+    initDatabase();
+  </script>
+</body>
+</html>
