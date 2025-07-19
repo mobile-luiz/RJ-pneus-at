@@ -87,6 +87,7 @@ function formatDateToBrazilian(date) {
 // Adiciona conteúdo no PDF
 function addContent(doc, yOffset) {
   const pageWidth = doc.internal.pageSize.width;
+  
 
   // Título
   doc.setFontSize(14);

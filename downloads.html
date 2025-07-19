@@ -167,64 +167,88 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
   <script>
-    let dbGlobal;
-    let SQL;
-    let allPdfs = [];
+  let dbGlobal;
+let SQL;
+let allPdfs = [];
+let currentPage = 1;
+const itemsPerPage = 10;
 
-    async function initDatabase() {
-      SQL = await initSqlJs({
-        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}`
-      });
+// Função para converter Uint8Array para Base64 sem estourar pilha
+function uint8ToBase64(u8Arr) {
+  const CHUNK_SIZE = 0x8000; // 32k
+  let index = 0;
+  const length = u8Arr.length;
+  let result = '';
+  let slice;
+  while (index < length) {
+    slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length));
+    result += String.fromCharCode.apply(null, slice);
+    index += CHUNK_SIZE;
+  }
+  return btoa(result);
+}
 
-      const savedDb = localStorage.getItem("myDatabase");
-      if (!savedDb) {
-        document.getElementById("download-list").innerHTML = "<p>Nenhum PDF salvo.</p>";
-        return;
-      }
+// Inicializa o banco SQLite do localStorage e carrega os dados
+async function initDatabase() {
+  SQL = await initSqlJs({
+    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${file}`
+  });
 
-      const binaryString = atob(savedDb);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+  const savedDb = localStorage.getItem("myDatabase");
+  if (!savedDb) {
+    document.getElementById("download-list").innerHTML = "<p>Nenhum PDF salvo.</p>";
+    return;
+  }
 
-      dbGlobal = new SQL.Database(bytes);
+  const binaryString = atob(savedDb);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
 
-      const res = dbGlobal.exec("SELECT id, nome, data, conteudo FROM pdfs ORDER BY id DESC");
-      if (res.length === 0 || res[0].values.length === 0) {
-        document.getElementById("download-list").innerHTML = "<p>Nenhum PDF salvo.</p>";
-        return;
-      }
+  dbGlobal = new SQL.Database(bytes);
 
-      allPdfs = res[0].values.map(row => ({
-        id: row[0],
-        nome: row[1],
-        data: row[2],
-        conteudo: row[3]
-      }));
+  await loadAllPdfsFromDB();
+}
 
-      renderPDFs();
-    }
+// Carrega todos PDFs da tabela e atualiza a lista allPdfs
+function loadAllPdfsFromDB() {
+  const res = dbGlobal.exec("SELECT id, nome, data, conteudo FROM pdfs ORDER BY id DESC");
+  if (!res.length || !res[0].values.length) {
+    allPdfs = [];
+    document.getElementById("download-list").innerHTML = "<p>Nenhum PDF salvo.</p>";
+    renderPagination(0, 0);
+    return;
+  }
 
-  function convertBRDateToISO(brDateTime) {
-  // Recebe "19/07/2025, 15:43"
-  // Retorna "2025-07-19"
-  const parts = brDateTime.split(",")[0].trim(); // "19/07/2025"
-  const [dia, mes, ano] = parts.split("/");
+  allPdfs = res[0].values.map(row => ({
+    id: row[0],
+    nome: row[1],
+    data: row[2],
+    conteudo: row[3]
+  }));
+
+  currentPage = 1;
+  renderPDFs();
+}
+
+// Converte data BR "dd/mm/yyyy, hh:mm" para ISO "yyyy-mm-dd"
+function convertBRDateToISO(brDateTime) {
+  const datePart = brDateTime.split(",")[0].trim();
+  const [dia, mes, ano] = datePart.split("/");
   return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
 }
 
+// Filtra, pagina e exibe a lista de PDFs
 function renderPDFs() {
+  console.log("Renderizando PDFs, total:", allPdfs.length);
   const downloadList = document.getElementById("download-list");
-  const filterDate = document.getElementById("filterDate").value; // "YYYY-MM-DD"
+  const filterDate = document.getElementById("filterDate").value;
   const filterOs = document.getElementById("filterOs").value.trim().toLowerCase();
 
-  downloadList.innerHTML = "";
-
-  const filtered = allPdfs.filter(pdf => {
+  let filtered = allPdfs.filter(pdf => {
     if (filterDate) {
-      const pdfDateISO = convertBRDateToISO(pdf.data);
-      if (pdfDateISO !== filterDate) return false;
+      if (convertBRDateToISO(pdf.data) !== filterDate) return false;
     }
     if (filterOs && !pdf.nome.toLowerCase().includes(filterOs)) return false;
     return true;
@@ -232,47 +256,150 @@ function renderPDFs() {
 
   if (filtered.length === 0) {
     downloadList.innerHTML = "<p>Nenhum PDF encontrado.</p>";
+    renderPagination(0, 0);
     return;
   }
 
-  filtered.forEach(({ id, nome, data, conteudo }) => {
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const pageItems = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+  downloadList.innerHTML = "";
+  pageItems.forEach(({ id, nome, data, conteudo }) => {
     const container = document.createElement("div");
     container.className = "pdf-item";
 
     const link = document.createElement("a");
     link.href = conteudo;
     link.download = nome;
-    link.textContent = `#${id} - ${nome} (${data})`; // já está em BR
+    link.textContent = `#${id} - ${nome} (${data})`;
 
     const deleteBtn = document.createElement("button");
     deleteBtn.type = "button";
     deleteBtn.setAttribute("aria-label", `Excluir PDF ${nome}`);
     deleteBtn.textContent = "🗑️";
-    deleteBtn.onclick = () => excluirPDF(id);
+    deleteBtn.addEventListener("click", excluirPDFHandler);
 
     container.appendChild(link);
     container.appendChild(deleteBtn);
     downloadList.appendChild(container);
   });
+
+  renderPagination(currentPage, totalPages);
 }
 
+// Renderiza controles de paginação
+function renderPagination(current, total) {
+  const oldPagination = document.getElementById("pagination");
+  if (oldPagination) oldPagination.remove();
 
-    function excluirPDF(id) {
-      if (!confirm("Tem certeza que deseja excluir este PDF?")) return;
+  if (total <= 1) return;
 
-      dbGlobal.run(`DELETE FROM pdfs WHERE id = ?`, [id]);
-      const data = dbGlobal.export();
-      const base64Data = btoa(String.fromCharCode(...data));
-      localStorage.setItem("myDatabase", base64Data);
+  const container = document.createElement("div");
+  container.id = "pagination";
+  container.style.marginTop = "20px";
+  container.style.textAlign = "center";
 
-      allPdfs = allPdfs.filter(pdf => pdf.id !== id);
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "« Anterior";
+  prevBtn.disabled = current === 1;
+  prevBtn.style.marginRight = "12px";
+  prevBtn.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
       renderPDFs();
+      scrollToTop();
     }
+  });
 
-    document.getElementById("filterDate").addEventListener("change", renderPDFs);
-    document.getElementById("filterOs").addEventListener("input", renderPDFs);
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "Próximo »";
+  nextBtn.disabled = current === total;
+  nextBtn.style.marginLeft = "12px";
+  nextBtn.addEventListener("click", () => {
+    if (currentPage < total) {
+      currentPage++;
+      renderPDFs();
+      scrollToTop();
+    }
+  });
 
-    initDatabase();
+  const pageInfo = document.createElement("span");
+  pageInfo.textContent = `Página ${current} de ${total}`;
+  pageInfo.style.margin = "0 10px";
+  pageInfo.style.fontWeight = "600";
+
+  container.appendChild(prevBtn);
+  container.appendChild(pageInfo);
+  container.appendChild(nextBtn);
+
+  document.querySelector(".container").appendChild(container);
+}
+
+// Scroll suave para o topo ao mudar página
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Exclui PDF da tabela, atualiza localStorage e recarrega lista
+function excluirPDFHandler(event) {
+  event.stopPropagation(); // evita propagação desnecessária
+  const btn = event.currentTarget;
+
+  if (!confirm("Tem certeza que deseja excluir este PDF?")) return;
+
+  const item = btn.closest(".pdf-item");
+  if (!item) return;
+
+  const link = item.querySelector("a");
+  if (!link) return;
+
+  const texto = link.textContent.trim();
+  const match = texto.match(/^#(\d+)\s+-/);
+  if (!match) {
+    alert("Não foi possível identificar o PDF.");
+    return;
+  }
+
+  const id = parseInt(match[1]);
+
+  try {
+    dbGlobal.run("DELETE FROM pdfs WHERE id = ?", [id]);
+
+    const data = dbGlobal.export();
+    const base64Data = uint8ToBase64(data);
+    localStorage.setItem("myDatabase", base64Data);
+
+    allPdfs = allPdfs.filter(pdf => pdf.id !== id);
+
+    if (allPdfs.length > 0) {
+      currentPage = 1;
+      renderPDFs();
+    } else {
+      document.getElementById("download-list").innerHTML = "<p>Nenhum PDF salvo.</p>";
+      renderPagination(0, 0);
+    }
+  } catch (error) {
+    alert("Erro ao excluir PDF: " + error.message);
+  }
+}
+
+// Eventos para filtros - resetam a página e re-renderizam lista
+document.getElementById("filterDate").addEventListener("change", () => {
+  currentPage = 1;
+  renderPDFs();
+});
+
+document.getElementById("filterOs").addEventListener("input", () => {
+  currentPage = 1;
+  renderPDFs();
+});
+
+// Inicializa a aplicação
+initDatabase();
+
   </script>
 </body>
 </html>
