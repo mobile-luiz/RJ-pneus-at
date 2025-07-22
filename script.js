@@ -87,18 +87,40 @@ function formatDateToBrazilian(date) {
 // Adiciona conteúdo no PDF
 function addContent(doc, yOffset) {
   const pageWidth = doc.internal.pageSize.width;
-  
 
-  // Título
+  // Título centralizado
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.text("AUTORIZAÇÃO DE SERVIÇO", pageWidth / 2, yOffset - 10, { align: 'center' });
 
-  // Número serviço em vermelho
+  // Número do serviço em vermelho
   doc.setTextColor(255, 0, 0);
   doc.setFontSize(10);
   doc.text(`Número: ${currentServiceNumber}`, pageWidth / 2, yOffset - 5, { align: 'center' });
   doc.setTextColor(0, 0, 0);
+
+// OBS: sem fundo nem borda
+doc.setFontSize(7);
+doc.setFont("helvetica", "normal");
+
+const obsText = [
+  "OBS:",
+  "1 - AS MERCADORIAS QUE NÃO FOREM RETIRADAS ATÉ 30 DIAS",
+  "SERÃO VENDIDAS PARA O PAGAMENTO DO MATERIAL",
+  "EMPREGADO NA MESMA.",
+  "2 - NÃO GARANTIMOS ESTOURO DE CARCAÇA."
+];
+
+// Ajuste horizontal (mais à direita) e vertical (mais abaixo)
+const obsX = pageWidth - 80; // mais à direita
+let obsLineY = yOffset + 1;  // mais abaixo
+
+obsText.forEach(line => {
+  doc.text(line, obsX, obsLineY);
+  obsLineY += 4;
+});
+
+
 
   // Dados da empresa
   doc.setFontSize(10);
@@ -108,7 +130,9 @@ function addContent(doc, yOffset) {
   doc.text('RENOVAÇÃO, CONSERTOS EM GERAL', 10, yOffset + 5);
   doc.text('Rua C2 - Bairro Boa Vista, Qd. 16 Lt. 52 e 53 - Luís Eduardo Magalhães - BA', 10, yOffset + 10);
   doc.text('Fone: (77) 9 9924-1468', 10, yOffset + 15);
-  doc.text(`CNPJ: 36.881.820/0001-87`, 10, yOffset + 20);
+  doc.text('CNPJ: 36.881.820/0001-87', 10, yOffset + 20);
+
+
 
   // Dados do cliente
   const cliente = document.getElementById('cliente')?.value || '';
